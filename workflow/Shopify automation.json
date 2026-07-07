@@ -1,0 +1,425 @@
+{
+  "name": "Shopify automation",
+  "nodes": [
+    {
+      "parameters": {
+        "authentication": "accessToken",
+        "topic": "orders/create"
+      },
+      "type": "n8n-nodes-base.shopifyTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "b65e824e-f8ef-49c4-b635-d55438f14ed5",
+      "name": "Shopify Trigger",
+      "webhookId": "55b7a869-a426-482f-a98e-b3f2746942f4",
+      "credentials": {
+        "shopifyAccessTokenApi": {
+          "id": "5AZ83o8FSTlSmT4v",
+          "name": "Shopify Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/111YNf4nnCdihzNIMVHRIMbzlXWxCdqEObFFcHTXO91s/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "inventory_tracker",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/111YNf4nnCdihzNIMVHRIMbzlXWxCdqEObFFcHTXO91s/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Product",
+              "lookupValue": "={{ $json.line_items[0].name }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        336,
+        0
+      ],
+      "id": "fa8fd2ea-2925-41ab-8109-4010ff491d29",
+      "name": "Get row(s) in sheet",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "MlACjcMOZHRQOlew",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const currentStock = $input.item.json.Stock;\nconst orderedQuantity = $('Shopify Trigger').item.json.line_items[0].quantity;\nconst newStock = Math.max(0, currentStock - orderedQuantity);\n\nreturn {\n  product: $input.item.json.Product,\n  newStock: newStock,\n  threshold: $input.item.json.Threshold\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        0
+      ],
+      "id": "f66c1e8b-21f1-4d28-b635-28d75ee00779",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/111YNf4nnCdihzNIMVHRIMbzlXWxCdqEObFFcHTXO91s/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "inventory_tracker",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/111YNf4nnCdihzNIMVHRIMbzlXWxCdqEObFFcHTXO91s/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Product": "={{ $json.product }}",
+            "Stock": "={{ $json.newStock }}",
+            "Threshold": "={{ $json.threshold }}"
+          },
+          "matchingColumns": [
+            "Product"
+          ],
+          "schema": [
+            {
+              "id": "Product",
+              "displayName": "Product",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Stock",
+              "displayName": "Stock",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Threshold",
+              "displayName": "Threshold",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "1c99d0c9-b156-41f7-ba86-e82697fe455f",
+      "name": "Update row in sheet",
+      "retryOnFail": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "MlACjcMOZHRQOlew",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3176d881-4e89-4023-92b4-cb0fb6cbcb68",
+              "leftValue": "={{ $json.Stock }}",
+              "rightValue": "={{ $json.Threshold }}",
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            },
+            {
+              "id": "f3b00d67-b09d-49d3-a693-8895a5058099",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": "=",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1248,
+        0
+      ],
+      "id": "3bc19c7b-7c22-4f5d-b73c-0fed4438843b",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "#inventory-alerts-",
+          "mode": "name"
+        },
+        "text": "=⚠️ Low stock alert : {{ $json.Product }}is down to {{ $json.Stock }} units (threshold: {{ $json.Threshold}})",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        1456,
+        -96
+      ],
+      "id": "f4d3f8e3-1100-4850-9555-2491d1d7593b",
+      "name": "Send a message",
+      "webhookId": "02baca75-d9d6-4011-8ca4-152bfbedf7d2",
+      "credentials": {
+        "slackApi": {
+          "id": "Sy7fTkdvvXJQSWvf",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4a440148-b939-40f0-b97f-6036f59f746a",
+              "leftValue": "={{ $json.Product }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notExists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        544,
+        0
+      ],
+      "id": "a3744879-f47b-45a1-9193-70b834b01bd9",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "inventory-alerts-",
+          "mode": "name"
+        },
+        "text": "=⚠️ Unknown product ordered: {{ $('Shopify Trigger').item.json.line_items[0].name }} — not in inventory sheet, please add it manually.",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        736,
+        -224
+      ],
+      "id": "3a1506bc-a4d8-4f57-a820-1e21ea035c42",
+      "name": "Send a message1",
+      "webhookId": "76f9467a-7498-4c5d-a5f2-ed164b13ea3c",
+      "credentials": {
+        "slackApi": {
+          "id": "Sy7fTkdvvXJQSWvf",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "appToken",
+        "email": "={{ $json.}}",
+        "additionalFields": {},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.2,
+      "position": [
+        192,
+        0
+      ],
+      "id": "d5dcf74a-6afb-4d0e-bdb1-5cbaba48a547",
+      "name": "Create or update a contact",
+      "credentials": {
+        "hubspotAppToken": {
+          "id": "YjxpoKW5O5dkEiwU",
+          "name": "HubSpot account 2"
+        }
+      },
+      "disabled": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Shopify Trigger": {
+      "main": [
+        [
+          {
+            "node": "Create or update a contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create or update a contact": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "9AMXMDDePzb0oQ4K",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "2ace8a61-fbf2-492a-9dda-df17b971d2a3",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c3a3b400572aa1609daee33004bcf9b6799a8cb5443644e1af7e4cf6083f5de4"
+  },
+  "nodeGroups": [],
+  "id": "nlMLrBj7Mucm7nu5",
+  "tags": []
+}
