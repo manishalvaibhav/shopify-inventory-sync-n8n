@@ -25,7 +25,7 @@ error-prone process that doesn't scale as order volume grows.
 
 ## Architecture
 
-![Architecture diagram](./architecture-diagram.png)
+![Architecture diagram](./docs/architecture-diagram.png)
 
 Google Sheets stands in for a real ERP system. The architecture generalizes to
 any REST or OData-based ERP by swapping the Sheets nodes for HTTP Request nodes
